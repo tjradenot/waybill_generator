@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 from settings import company_data
 
+
 def get_df_from_excel_file(filename: str, sheetname='данные') -> pd.DataFrame:
     """Принимает имя файла в виде текста. Возвращает датафрейм."""
     return pd.read_excel(filename, na_values=['(пусто)'], sheet_name=sheetname)
@@ -17,7 +18,7 @@ def filter_df(data: dict, df_data: pd.DataFrame) -> pd.DataFrame:
         user_vin = __df.columns[0]
         user_start_date = transform_text_to_datetime(__df.iat[0, 0])
         user_end_date = transform_text_to_datetime(__df.iat[1, 0])
-        
+
         # Смена
         if __df.iat[2, 0] != 'все':
             user_shift = [__df.iat[2, 0]]
@@ -96,10 +97,6 @@ class Waybill():
             _df.at[index, 'Топливо - СЛИВ В ЕМКОСТЬ'])
 
 
-def print_number_of_waybills(df: pd.DataFrame) -> None:
-    print(f'Сгенерировано {len(df)} путевых листов.')
-
-
 def generate_two_waybills(_df2: pd.DataFrame) -> None:
     doc = DocxTemplate(Path(__file__).parent.joinpath(
         'templates/waybill_template_two.docx'))
@@ -133,12 +130,11 @@ def generate_waybills(_df):
         if len(_df) % 2 != 0:
             generate_two_waybills(_df[:-1])
             generate_one_waybill(_df[-1:])
-            print_number_of_waybills(_df)
         else:
             generate_two_waybills(_df)
-            print_number_of_waybills(_df)
+        return True
     else:
-        print('Нет данных.')
+        return False
 
 
 def compare_dates(date1, date2):
@@ -175,29 +171,9 @@ def check_files():
             print(f'Нет файла: {path.name}')
             return False
 
-    print('Проверка файлов успешно завершена.')
     return True
 
 
-def main(input_data: dict):
-    start = list(input_data.values())[0][0]
-    end = list(input_data.values())[0][1]
-
-    if bool(input_data) and compare_dates(start, end):
-
-        # Изменить путь на тот, где находится файл скрипта
-        script_path = Path(__file__).parent.absolute()
-        os.chdir(script_path)
-
-        df = get_df_from_excel_file('waybill_data.xlsx')
-
-        df_filtered = filter_df(input_data, df)
-
-        generate_waybills(df_filtered)
-    else:
-        print('Неверные данные! Проверьте даты!')
-
-
-if __name__ == '__main__':
-
-    main()
+def get_path_of_the_script():
+    script_path = Path(__file__).parent.absolute()
+    os.chdir(script_path)
