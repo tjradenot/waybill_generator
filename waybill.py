@@ -35,12 +35,13 @@ def filter_df(data: dict, df_data: pd.DataFrame) -> pd.DataFrame:
 
 
 def transform_text_to_datetime(datestr: str):
+    """Принимает строку и возвращает дату."""
     if isinstance(datestr, str):
-        date_from_text = datetime.datetime.strptime(datestr, '%d.%m.%Y')
-        return date_from_text
+        return datetime.datetime.strptime(datestr, '%d.%m.%Y')
 
 
 def generate_filename(wb: dict) -> str:
+    """Возвращает название файла в формате строки."""
     filename = f"{wb.get('site')}_" \
         f"{wb.get('vehicle')}_" \
         f"{wb.get('vin')}_" \
@@ -51,10 +52,7 @@ def generate_filename(wb: dict) -> str:
 
 
 def number_is_integer(number: float) -> int | float:
-    if isinstance(number, float) and number.is_integer():
-        return int(number)
-    else:
-        return number
+    return int(number) if isinstance(number, float) and number.is_integer() else number
 
 
 class Waybill():
@@ -125,7 +123,7 @@ def generate_one_waybill(_df1: pd.DataFrame) -> None:
         f'output/{generate_filename(wb1)}'))
 
 
-def generate_waybills(_df):
+def generate_waybills(_df) -> bool:
     if len(_df) != 0:
         if len(_df) % 2 != 0:
             generate_two_waybills(_df[:-1])
@@ -137,43 +135,57 @@ def generate_waybills(_df):
         return False
 
 
-def compare_dates(date1, date2):
+def compare_dates(date1, date2) -> bool:
     date_format = '%d.%m.%Y'
     if check_date(date1) and check_date(date2):
-
         return datetime.datetime.strptime(date1, date_format) <= datetime.datetime.strptime(date2, date_format)
 
 
-def check_date(date_str: str) -> True | False:
+def check_date(date_str: str) -> bool:
     """Преобразовывает строку в дату. Возвращает False, если преобразование не удалось."""
-    date_format = '%d.%m.%Y'
     try:
-        datetime.datetime.strptime(date_str, date_format)
+        transform_text_to_datetime(date_str)
     except ValueError:
         return False
     else:
         return True
 
 
-def check_files():
-    template1 = Path(__file__).parent.joinpath(
+def check_files() -> bool:
+    """Проверяет наличие необходимых файлов и директории 'output'.
+    Выводит информацию об отсутствии необходимых файлов/директорий."""
+    file_path = Path(__file__).parent
+    template1 = file_path.joinpath(
         'templates/waybill_template_one.docx')
-    template2 = Path(__file__).parent.joinpath(
+    template2 = file_path.joinpath(
         'templates/waybill_template_two.docx')
-    excel_file = Path(__file__).parent.joinpath('waybill_data.xlsx')
-    py_script = Path(__file__).parent.joinpath('waybill.py')
-    settings = Path(__file__).parent.joinpath('settings.py')
+    excel_file = file_path.joinpath('waybill_data.xlsx')
+    output_directory = file_path.joinpath('output')
 
-    paths = [template1, template2, excel_file, py_script, settings]
+    paths = [template1, template2, excel_file, output_directory]
 
     for path in paths:
-        if not path.is_file():
-            print(f'Нет файла: {path.name}')
+        if path.is_file():
+            continue
+        elif path.is_dir():
+            continue
+        else:
+            print(f'Нет файла/папки: {path.name}')
             return False
 
     return True
 
 
-def get_path_of_the_script():
+def old_data(filename: str = 'waybill_data.xlsx') -> bool:
+    """Возвращает True, если с последнего изменения файла прошло более 60 минут."""
+    last_modified_timestamp = Path(filename).stat().st_mtime
+    last_modified = datetime.datetime.fromtimestamp(last_modified_timestamp)
+
+    timedelta = (datetime.datetime.now() - last_modified).total_seconds()
+
+    return (timedelta / 60) > 60
+
+
+def change_path():
     script_path = Path(__file__).parent.absolute()
     os.chdir(script_path)

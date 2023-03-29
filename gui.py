@@ -1,16 +1,16 @@
 import tkinter as tk
 from tkinter import ttk
 from tkcalendar import Calendar
-from waybill import check_files, compare_dates, generate_waybills, filter_df, get_path_of_the_script, get_df_from_excel_file
+from waybill import check_files, compare_dates, generate_waybills, filter_df, change_path, get_df_from_excel_file, old_data
 import time
 from settings import gui_data
 
-get_path_of_the_script()
+change_path()
 
 
 class Application:
 
-    def __init__(self, __df):
+    def __init__(self, __df, color='green', message='Проверка файлов завершена.'):
         # Настройки основного окна
         self.window = tk.Tk()
         # https://www.iconarchive.com/show/material-icons-by-pictogrammers/excavator-icon.html
@@ -118,9 +118,9 @@ class Application:
         self.separator2.pack(pady=6, fill='x')
 
         # Вывод служебной информации
-        self.output_data_variable = tk.StringVar(value='Проверка файлов завершена.')
+        self.output_data_variable = tk.StringVar(value=message)
         self.output_data = ttk.Label(
-            self.window, foreground='green', font='Calibri 16 bold', textvariable=self.output_data_variable)
+            self.window, foreground=color, font='Calibri 16 bold', textvariable=self.output_data_variable)
         self.output_data.pack()
 
         self.window.mainloop()
@@ -172,8 +172,12 @@ class Application:
 if __name__ == '__main__':
 
     if check_files():
-       df = get_df_from_excel_file('waybill_data.xlsx')
-       app = Application(df)
+        if not old_data():
+           df = get_df_from_excel_file('waybill_data.xlsx')
+           app = Application(df)
+        else:
+           df = get_df_from_excel_file('waybill_data.xlsx')
+           app = Application(df, color='red', message='Данные устарели!')    
     else:
         print('Завершаю работу...')
         for i in range(5, 0, -1):
